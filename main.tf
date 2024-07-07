@@ -303,6 +303,44 @@ resource "aws_vpc_endpoint" "dynamodb" {
   }
 }
 
+# DB Instance Main Microservice
+resource "aws_db_instance" "db_main_microservice" {
+  allocated_storage       = 20 
+  max_allocated_storage   = 100 
+  identifier              = "db-gym-main-service"
+  db_name                 = "db_gym_main_service"
+  engine                  = "mysql"
+  engine_version          = "8.0.35"
+  instance_class          = "db.t3.micro"
+  username                = "admin"
+  password                = "prodDb2024"
+  storage_type            = "gp2"
+  skip_final_snapshot     = true
+  publicly_accessible     = false
+  db_subnet_group_name    = aws_db_subnet_group.mainDb_sbg.name
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
+}
+
+# DB Instance Report Microservice
+resource "aws_db_instance" "db_report_microservice" {
+  allocated_storage       = 20 
+  max_allocated_storage   = 100 
+  identifier              = "db-gym-report-service"
+  db_name                 = "db_gym_report_service"
+  engine                  = "mysql"
+  engine_version          = "8.0.35"
+  instance_class          = "db.t3.micro"
+  username                = "admin"
+  password                = "prodDb2024"
+  storage_type            = "gp2"
+  skip_final_snapshot     = true
+  publicly_accessible     = false
+  db_subnet_group_name    = aws_db_subnet_group.mainDb_sbg.name
+  vpc_security_group_ids  = [aws_security_group.rds_sg.id]
+}
+
+
+
 # EC2 Instances
 
 # Bastion Host
