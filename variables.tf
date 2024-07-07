@@ -11,3 +11,16 @@ variable "your_ip" {
   default = "143.137.96.132"
 }
 
+variable "queues" {
+  type = map(string)
+  default = {
+    saveTraining        = "saveTraining-Queue.fifo"
+    updateTraining      = "updateTraining-Queue.fifo"
+    summaryTrainer      = "summaryTrainer-Queue.fifo"
+    deleteTraining      = "deleteTraining-Queue.fifo"
+    trainerTrainingList = "trainerTrainingList-Queue.fifo"
+    traineeTrainingList = "traineeTrainingList-Queue.fifo"
+    responses           = "responses-Queue.fifo"
+  }
+}
+

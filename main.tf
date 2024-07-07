@@ -340,6 +340,52 @@ resource "aws_db_instance" "db_report_microservice" {
 }
 
 
+#Resource to create SQS queues
+resource "aws_sqs_queue" "queues" {
+  for_each = var.queues
+
+  name       = each.value
+  fifo_queue = true
+  content_based_deduplication = true
+}
+
+resource "aws_sqs_queue_policy" "queues_policy" {
+  for_each = aws_sqs_queue.queues
+
+  queue_url = each.value.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::938282813707:user/FullAccess_UserSQS"
+        },
+        Action = "sqs:*",
+        Resource = each.value.arn,
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = aws_vpc_endpoint.sqs.arn
+          }
+        }
+      }
+      #Rule for test in dev enviroment
+      # {
+      #   Effect = "Allow",
+      #   Principal = {
+      #     AWS = "arn:aws:iam::938282813707:user/FullAccess_UserSQS"
+      #   },
+      #   Action = "sqs:*",                  
+      #   Resource = each.value.arn,
+      #   Condition = {
+      #     IpAddress = {
+      #       "aws:SourceIp" = "0.0.0.0/0"
+      #     }
+      #   }
+      # }
+    ]
+  })
+}
 
 # EC2 Instances
 
