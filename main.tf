@@ -216,12 +216,12 @@ resource "aws_security_group" "private_instances" {
     protocol        = "tcp"
     security_groups = [aws_security_group.rds_sg.id] 
   }
-  # ingress {
-  #   from_port   = 22
-  #   to_port     = 22
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["0.0.0.0/0"]
-  # }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   egress {
     from_port   = 0
     to_port     = 0
@@ -368,30 +368,60 @@ resource "aws_sqs_queue_policy" "queues_policy" {
             "aws:SourceArn" = aws_vpc_endpoint.sqs.arn
           }
         }
-      }
+      },
       #Rule for test in dev enviroment
-      # {
-      #   Effect = "Allow",
-      #   Principal = {
-      #     AWS = "arn:aws:iam::938282813707:user/FullAccess_UserSQS"
-      #   },
-      #   Action = "sqs:*",                  
-      #   Resource = each.value.arn,
-      #   Condition = {
-      #     IpAddress = {
-      #       "aws:SourceIp" = "0.0.0.0/0"
-      #     }
-      #   }
-      # }
+      {
+        Effect = "Allow",
+        Principal = {
+          AWS = "arn:aws:iam::938282813707:user/FullAccess_UserSQS"
+        },
+        Action = "sqs:*",                  
+        Resource = each.value.arn,
+        Condition = {
+          IpAddress = {
+            "aws:SourceIp" = "0.0.0.0/0"
+          }
+        }
+      }
     ]
   })
+}
+
+resource "aws_instance" "base-main_microservice" {
+  ami           = "ami-06c68f701d8090592"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.public_main_microservice.id
+  key_name      = "gym-core-service-keypair"
+
+  security_groups = [
+    aws_security_group.public_instance.id,
+  ]
+  user_data = file("./setup_script_mainEC2.sh")
+  tags = {
+    Name = "${var.project_name}-BaseMainMicroservice"
+  }
+}
+
+resource "aws_instance" "base-report_microservice" {
+  ami           = "ami-06c68f701d8090592"
+  instance_type = "t2.micro"
+  subnet_id     = aws_subnet.public_main_microservice.id
+  key_name      = "gym-report-keypair"
+
+  security_groups = [
+    aws_security_group.private_instances.id
+  ]
+  user_data = file("./setup_script_reportEC2.sh")
+  tags = {
+    Name = "${var.project_name}-BaseReportMicroservice"
+  }
 }
 
 # EC2 Instances
 
 # Bastion Host
 resource "aws_instance" "bastion" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2 AMI
+  ami           = "ami-06c68f701d8090592"  # Amazon Linux 2 AMI
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_bastion.id
   key_name      = "gym-bastion-service-keypair" 
@@ -407,10 +437,10 @@ resource "aws_instance" "bastion" {
 
 # Main Microservice Host
 resource "aws_instance" "main_microservice" {
-  ami           = ami-06c68f701d8090592
+  ami           = "ami-055f597ad80eb85b8"
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public-main_microservice.id
-  key_name      = "gym-core-keypair"
+  subnet_id     = aws_subnet.public_main_microservice.id
+  key_name      = "gym-core-service-keypair"
 
   security_groups = [
     aws_security_group.public_instance.id,
