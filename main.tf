@@ -466,4 +466,80 @@ resource "aws_instance" "report_microservice" {
   }
 }
 
+#DinamoDB resource
+resource "aws_dynamodb_table" "trainers_summary" {
+  name           = "Trainers_Summary"
+  billing_mode   = "PROVISIONED" # or "PAY_PER_REQUEST" for on-demand mode
+  read_capacity  = 5
+  write_capacity = 5
+
+  hash_key = "TrainerUsername"
+  range_key = "TraineeStatus"
+
+  attribute {
+    name = "TrainerUsername"
+    type = "S"
+  }
+
+  attribute {
+    name = "TraineeStatus"
+    type = "S"
+  }
+
+  attribute {
+    name = "TrainerFirstName"
+    type = "S"
+  }
+
+  attribute {
+    name = "TrainerLastName"
+    type = "S"
+  }
+
+  global_secondary_index {
+    name               = "TrainerName-Index"
+    hash_key           = "TrainerFirstName"
+    range_key          = "TrainerLastName"
+    projection_type    = "ALL"
+    read_capacity      = 5
+    write_capacity     = 5
+  }
+  
+  tags = {
+    Name        = "Trainers"
+    Environment = "Prod"
+  }
+}
+resource "null_resource" "dynamodb_initial_data" {
+  provisioner "local-exec" {
+    command = <<EOT
+      aws dynamodb put-item \
+        --table-name ${aws_dynamodb_table.trainers_summary.name} \
+        --item '{
+          "TrainerUsername": {"S": "john.doe"},
+          "TraineeStatus": {"S": "true"},
+          "TrainerFirstName": {"S": "John"},
+          "TrainerLastName": {"S": "Doe"},
+          "YearList": {"M": {
+            "2021": {"M": {
+                "January": {"N": "10"},
+                "February": {"N": "15"}
+            }},
+            "2022": {"M": {
+                "March": {"N": "20"},
+                "April": {"N": "25"}
+            }}
+          }}
+        }'
+    EOT
+  }
+  depends_on = [aws_dynamodb_table.trainers_summary]
+}
+
+
+output "dynamodb_table_name" {
+  value = aws_dynamodb_table.trainers_summary.name
+}
+
+
 
