@@ -387,6 +387,8 @@ resource "aws_sqs_queue_policy" "queues_policy" {
   })
 }
 
+#Base EC2 Instance for AMI
+
 resource "aws_instance" "base-main_microservice" {
   ami           = "ami-06c68f701d8090592"
   instance_type = "t2.micro"
@@ -474,7 +476,7 @@ resource "aws_dynamodb_table" "trainers_summary" {
   write_capacity = 5
 
   hash_key = "TrainerUsername"
-  range_key = "TraineeStatus"
+  range_key = "TrainerStatus"
 
   attribute {
     name = "TrainerUsername"
@@ -482,7 +484,7 @@ resource "aws_dynamodb_table" "trainers_summary" {
   }
 
   attribute {
-    name = "TraineeStatus"
+    name = "TrainerStatus"
     type = "S"
   }
 
@@ -517,7 +519,7 @@ resource "null_resource" "dynamodb_initial_data" {
         --table-name ${aws_dynamodb_table.trainers_summary.name} \
         --item '{
           "TrainerUsername": {"S": "john.doe"},
-          "TraineeStatus": {"S": "true"},
+          "TrainerStatus": {"S": "true"},
           "TrainerFirstName": {"S": "John"},
           "TrainerLastName": {"S": "Doe"},
           "YearList": {"M": {
@@ -541,5 +543,36 @@ output "dynamodb_table_name" {
   value = aws_dynamodb_table.trainers_summary.name
 }
 
+#Lambda resource
 
+resource "null_resource" "lambda_zip" {
+  provisioner "local-exec" {
+    command = <<EOT
+      zip ./lambda.zip ./report_lambda.py
+    EOT
+  }
+
+  triggers = {
+    lambda_source = filemd5("./report_lambda.py")
+  }
+}
+
+resource "aws_lambda_function" "csv_report" {
+  function_name = "${var.project_name}-CSV-Report"
+  role          = "arn:aws:iam::938282813707:role/FullAccessRoleLamdaS3-DynamoDB"
+  handler       = "report_lambda.lambda_handler"
+  runtime       = "python3.8"
+  filename      = "lambda.zip"
+
+  timeout       = 100
+  source_code_hash = filebase64sha256("./lambda.zip")
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.trainers_summary.name
+      S3_BUCKET      = "alejandromateus-bucket-task1"
+    }
+  }
+
+  depends_on = [null_resource.lambda_zip]
+}
 
