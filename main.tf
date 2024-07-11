@@ -437,36 +437,37 @@ resource "aws_instance" "bastion" {
   }
 }
 
-# Main Microservice Host
-resource "aws_instance" "main_microservice" {
-  ami           = "ami-055f597ad80eb85b8"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.public_main_microservice.id
-  key_name      = "gym-core-service-keypair"
+# # Main Microservice Host
+# resource "aws_instance" "main_microservice" {
+#   ami                   = "ami-055f597ad80eb85b8"
+#   instance_type         = "t2.micro"
+#   subnet_id             = aws_subnet.public_main_microservice.id
+#   key_name              = "gym-core-service-keypair"
+#   iam_instance_profile  = "arn:aws:iam::938282813707:instance-profile/FullAccesCloudWatchAgentAndS3"
 
-  security_groups = [
-    aws_security_group.public_instance.id,
-  ]
-  tags = {
-    Name = "${var.project_name}-MainMicroservice"
-  }
-}
+#   security_groups = [
+#     aws_security_group.public_instance.id,
+#   ]
+#   tags = {
+#     Name = "${var.project_name}-MainMicroservice"
+#   }
+# }
 
-# Report Microservice Host
-resource "aws_instance" "report_microservice" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.private_report.id
-  key_name      = "gym-report-keypair"
+# # Report Microservice Host
+# resource "aws_instance" "report_microservice" {
+#   ami           = "ami-0c55b159cbfafe1f0"
+#   instance_type = "t2.micro"
+#   subnet_id     = aws_subnet.private_report.id
+#   key_name      = "gym-report-keypair"
 
-  security_groups = [
-    aws_security_group.private_instances.id,
-  ]
+#   security_groups = [
+#     aws_security_group.private_instances.id,
+#   ]
 
-  tags = {
-    Name = "${var.project_name}-ReportMicroservice"
-  }
-}
+#   tags = {
+#     Name = "${var.project_name}-ReportMicroservice"
+#   }
+# }
 
 #DinamoDB resource
 resource "aws_dynamodb_table" "trainers_summary" {
@@ -576,3 +577,20 @@ resource "aws_lambda_function" "csv_report" {
   depends_on = [null_resource.lambda_zip]
 }
 
+resource "aws_cloudwatch_event_rule" "weekly_lambda_trigger" {
+  name                = "WeeklyLambdaTrigger"
+  schedule_expression = "rate(7 days)"
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.csv_report.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.weekly_lambda_trigger.arn
+}
+resource "aws_cloudwatch_event_target" "lambda_target" {
+  rule      = aws_cloudwatch_event_rule.weekly_lambda_trigger.name
+  target_id = "1"
+  arn       = aws_lambda_function.csv_report.arn
+}

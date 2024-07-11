@@ -13,8 +13,8 @@ sudo ./aws/install
 
 # Set up AWS CLI 
 echo "Configuring AWS CLI..."
-aws configure set aws_access_key_id "<YOUR KEY ID>" --profile read-accessS3-profile
-aws configure set aws_secret_access_key "<YOUR DECRET ACCESS KEY>" --profile read-accessS3-profile
+aws configure set aws_access_key_id <ACCSES_KEY> --profile read-accessS3-profile
+aws configure set aws_secret_access_key <SECRET_KEY> --profile read-accessS3-profile
 aws configure set region us-east-1 --profile read-accessS3-profile
 aws configure set output json --profile read-accessS3-profile
 
@@ -37,6 +37,13 @@ sudo docker load -i ./image-files/gym-report-service.tar
 
 #Run a container of the image
 echo "Run a container of the image"
-
 sudo docker run -d --name report-service --env-file ./envFiles/.env -p 8080:8080 gym-report-image:v1.0
+
+# Install CloudWatch Agent
+sudo yum install -y amazon-cloudwatch-agent
+# Descargar la configuración de CloudWatch Agent desde S3
+sudo aws s3 cp s3://alejandromateus-bucket-task1/cwagent-config.json /opt/aws/amazon-cloudwatch-agent/bin/config.json
+# Iniciar el agente de CloudWatch
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
 echo "Setup script completed successfully."

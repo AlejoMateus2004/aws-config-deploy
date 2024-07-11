@@ -1,0 +1,92 @@
+{
+    "agent": {
+      "metrics_collection_interval": 60,
+      "logfile": "/opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log"
+    },
+    "metrics": {
+      "namespace": "CWAgent",
+      "metrics_collected": {
+        "cpu": {
+          "measurement": [
+            {"name": "cpu_usage_idle", "unit": "Percent"},
+            {"name": "cpu_usage_iowait", "unit": "Percent"},
+            {"name": "cpu_usage_user", "unit": "Percent"},
+            {"name": "cpu_usage_system", "unit": "Percent"}
+          ],
+          "resources": [
+            "*"
+          ],
+          "totalcpu": true
+        },
+        "disk": {
+          "measurement": [
+            "used_percent",
+            "inodes_free"
+          ],
+          "resources": [
+            "*"
+          ]
+        },
+        "diskio": {
+          "measurement": [
+            "reads",
+            "writes",
+            "read_time",
+            "write_time"
+          ],
+          "resources": [
+            "*"
+          ]
+        },
+        "mem": {
+          "measurement": [
+            "mem_used_percent",
+            "mem_available_percent"
+          ]
+        },
+        "net": {
+          "measurement": [
+            "bytes_sent",
+            "bytes_recv",
+            "packets_sent",
+            "packets_recv"
+          ],
+          "resources": [
+            "*"
+          ]
+        },
+        "swap": {
+          "measurement": [
+            "swap_used_percent"
+          ]
+        },
+        "system": {
+          "measurement": [
+            "load_1",
+            "load_5",
+            "load_15",
+            "uptime"
+          ]
+        }
+      }
+    },
+    "logs": {
+      "logs_collected": {
+        "files": {
+          "collect_list": [
+            {
+              "file_path": "/var/log/messages",
+              "log_group_name": "my-log-group",
+              "log_stream_name": "{instance_id}"
+            },
+            {
+              "file_path": "/var/log/syslog",
+              "log_group_name": "my-log-group",
+              "log_stream_name": "{instance_id}"
+            }
+          ]
+        }
+      }
+    }
+  }
+  
